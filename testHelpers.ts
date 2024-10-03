@@ -1,6 +1,7 @@
 import {
   Arbitrary,
   array,
+  boolean,
   constant,
   constantFrom,
   dictionary,
@@ -25,7 +26,7 @@ export const xmlAttributeName =
 
 export function descendants(parent: Element | XMLDocument): Node[] {
   return (Array.from(parent.childNodes) as Node[]).concat(
-    ...Array.from(parent.children).map((child) => descendants(child)),
+    ...Array.from(parent.children).map((child) => descendants(child))
   );
 }
 
@@ -60,19 +61,19 @@ const testDocStrings = [
 export type TestDoc = { doc: XMLDocument; nodes: Node[] };
 export const testDocs = tuple(
   constantFrom(...testDocStrings),
-  constantFrom(...testDocStrings),
+  constantFrom(...testDocStrings)
 )
   .map((strs) =>
-    strs.map((str) => new DOMParser().parseFromString(str, "application/xml")),
+    strs.map((str) => new DOMParser().parseFromString(str, "application/xml"))
   )
   .map((docs) =>
-    docs.map((doc) => ({ doc, nodes: descendants(doc).concat([doc]) })),
+    docs.map((doc) => ({ doc, nodes: descendants(doc).concat([doc]) }))
   ) as Arbitrary<[TestDoc, TestDoc]>;
 
 export function remove(nodes: Node[]): Arbitrary<Remove> {
   const node = oneof(
     { arbitrary: constantFrom(...nodes), weight: nodes.length },
-    testDocs.chain((docs) => constantFrom(...docs.map((d) => d.doc))),
+    testDocs.chain((docs) => constantFrom(...docs.map((d) => d.doc)))
   );
   return record({ node });
 }
@@ -100,7 +101,7 @@ export function setAttribute(nodes: Node[]): Arbitrary<SetAttributes> {
   );
   const attributes = dictionary(
     stringArbitrary(),
-    oneof(stringArbitrary(), constant(null)),
+    oneof(stringArbitrary(), constant(null))
   );
   // object() instead of nested dictionary() necessary for performance reasons
   const attributesNS = objectArbitrary({
@@ -116,13 +117,13 @@ export function complexEdit(nodes: Node[]): Arbitrary<EditV2[]> {
 }
 
 export function simpleEdit(
-  nodes: Node[],
+  nodes: Node[]
 ): Arbitrary<Insert | SetAttributes | Remove | SetTextContent> {
   return oneof(
     remove(nodes),
     insert(nodes),
     setAttribute(nodes),
-    setTextContent(nodes),
+    setTextContent(nodes)
   );
 }
 
@@ -135,17 +136,19 @@ export type UndoRedoTestCase = {
   doc1: XMLDocument;
   doc2: XMLDocument;
   edits: EditV2[];
+  squash: boolean;
 };
 
 export function undoRedoTestCases(
   testDoc1: TestDoc,
-  testDoc2: TestDoc,
+  testDoc2: TestDoc
 ): Arbitrary<UndoRedoTestCase> {
   const nodes = testDoc1.nodes.concat(testDoc2.nodes);
   return record({
     doc1: constant(testDoc1.doc),
     doc2: constant(testDoc2.doc),
     edits: array(edit(nodes)),
+    squash: boolean(),
   });
 }
 
@@ -170,7 +173,7 @@ export function isValidInsert({ parent, node, reference }: Insert) {
     isParentOf(parent, reference) &&
     !node.contains(parent) &&
     ![Node.DOCUMENT_NODE, Node.DOCUMENT_TYPE_NODE].some(
-      (nodeType) => node.nodeType === nodeType,
+      (nodeType) => node.nodeType === nodeType
     ) &&
     !(
       parent instanceof Document &&
