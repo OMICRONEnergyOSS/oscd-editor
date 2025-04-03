@@ -180,6 +180,23 @@ describe("handleEdit", () => {
         ),
       ));
 
+    it("applies the last attribute of the same unprefixed name, per namespace", () => {
+      const element = sclDoc.createElement("test");
+      const xmlTextBefore = new XMLSerializer().serializeToString(element);
+      const testEdit = {
+        element,
+        attributes: {},
+        attributesNS: { "http://a.aa": { "A:Y": null, "B:Y": "abc", Y: "" } },
+      };
+      const undo = handleEdit(testEdit);
+      expect(element.getAttributeNS("http://a.aa", "Y")).to.equal("");
+
+      handleEdit(undo);
+      expect(new XMLSerializer().serializeToString(element)).to.equal(
+        xmlTextBefore,
+      );
+    });
+
     it("updates attributes given SetAttributes", () =>
       assert(
         property(
@@ -196,24 +213,22 @@ describe("handleEdit", () => {
               edit.attributesNS,
             )
               .map((entry) => entry as [string, Record<string, string | null>])
-              .every(([ns, attributes]) =>
-                Object.entries(attributes)
-                  .filter(([name]) => xmlAttributeName.test(name))
-                  .map((entry) => entry as [string, string | null])
-                  .every(
-                    ([name, value]) =>
-                      edit.element.getAttributeNS(
-                        ns,
-                        name.includes(":")
-                          ? <string>name.split(":", 2)[1]
-                          : name,
-                      ) === value,
-                  ),
-              );
+              .every(([ns, attributes]) => {
+                const unprefixedAttributes = Object.fromEntries(
+                  Object.entries(attributes)
+                    .filter(([name]) => xmlAttributeName.test(name))
+                    .map((entry) => entry as [string, string | null])
+                    .map(([name, value]) => [name.split(":", 2).pop(), value])
+                    .filter(([name]) => name),
+                );
+                return Object.entries(unprefixedAttributes).every(
+                  ([name, value]) =>
+                    edit.element.getAttributeNS(ns, name!) === value,
+                );
+              });
             return attributesHandledCorrectly && attributesNSHandledCorrectly;
           },
         ),
-        { seed: 847773831 },
       )).timeout(20000);
 
     it("removes elements given Removes", () =>
