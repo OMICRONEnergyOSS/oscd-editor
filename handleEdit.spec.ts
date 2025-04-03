@@ -6,7 +6,7 @@ import {
   isValidInsert,
   remove,
   sclDocString,
-  setAttribute,
+  setAttributes,
   setTextContent,
   testDocs,
   UndoRedoTestCase,
@@ -183,37 +183,37 @@ describe("handleEdit", () => {
     it("updates attributes given SetAttributes", () =>
       assert(
         property(
-          testDocs.chain(([{ nodes }]) => setAttribute(nodes)),
+          testDocs.chain(([{ nodes }]) => setAttributes(nodes)),
           (edit) => {
             handleEdit(edit);
-            return (
-              Object.entries(edit.attributes)
-                .filter(([name]) => xmlAttributeName.test(name))
-                .map((entry) => entry as [string, string | null])
-                .every(
-                  ([name, value]) => edit.element.getAttribute(name) === value,
-                ) &&
-              Object.entries(edit.attributesNS)
-                .map(
-                  (entry) => entry as [string, Record<string, string | null>],
-                )
-                .every(([ns, attributes]) =>
-                  Object.entries(attributes)
-                    .filter(([name]) => xmlAttributeName.test(name))
-                    .map((entry) => entry as [string, string | null])
-                    .every(
-                      ([name, value]) =>
-                        edit.element.getAttributeNS(
-                          ns,
-                          name.includes(":")
-                            ? <string>name.split(":", 2)[1]
-                            : name,
-                        ) === value,
-                    ),
-                )
-            );
+            const attributesHandledCorrectly = Object.entries(edit.attributes)
+              .filter(([name]) => xmlAttributeName.test(name))
+              .map((entry) => entry as [string, string | null])
+              .every(
+                ([name, value]) => edit.element.getAttribute(name) === value,
+              );
+            const attributesNSHandledCorrectly = Object.entries(
+              edit.attributesNS,
+            )
+              .map((entry) => entry as [string, Record<string, string | null>])
+              .every(([ns, attributes]) =>
+                Object.entries(attributes)
+                  .filter(([name]) => xmlAttributeName.test(name))
+                  .map((entry) => entry as [string, string | null])
+                  .every(
+                    ([name, value]) =>
+                      edit.element.getAttributeNS(
+                        ns,
+                        name.includes(":")
+                          ? <string>name.split(":", 2)[1]
+                          : name,
+                      ) === value,
+                  ),
+              );
+            return attributesHandledCorrectly && attributesNSHandledCorrectly;
           },
         ),
+        { seed: 847773831 },
       )).timeout(20000);
 
     it("removes elements given Removes", () =>

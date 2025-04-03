@@ -22,7 +22,7 @@ export {
   complexEdit,
   edit,
   remove,
-  setAttribute,
+  setAttributes,
   setTextContent,
   simpleEdit,
 } from "./testHelpers.js";

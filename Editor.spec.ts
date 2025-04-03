@@ -10,7 +10,7 @@ import {
   isValidInsert,
   remove,
   sclDocString,
-  setAttribute,
+  setAttributes,
   setTextContent,
   testDocs,
   UndoRedoTestCase,
@@ -20,7 +20,7 @@ import {
 
 import { newEditEventV2 } from "./edit-event.js";
 
-import { EditV2, isSetAttributes, isSetTextContent } from "./handleEdit.js";
+import { EditV2, isSetAttributes, isSetTextContent } from "./editv2.js";
 
 import { Editor } from "./Editor.js";
 
@@ -42,7 +42,7 @@ describe("Utility function to handle EditV2 edits", () => {
     editor.dispatchEvent(newEditEventV2({ parent, node, reference }, {}));
     expect(sclDoc.documentElement.querySelector("test")).to.have.property(
       "nextSibling",
-      reference
+      reference,
     );
   });
 
@@ -79,8 +79,8 @@ describe("Utility function to handle EditV2 edits", () => {
             },
           },
         },
-        {}
-      )
+        {},
+      ),
     );
 
     expect(element.getAttribute("name")).to.equal("A2");
@@ -102,7 +102,7 @@ describe("Utility function to handle EditV2 edits", () => {
       newEditEventV2({
         element,
         textContent: newTextContent,
-      })
+      }),
     );
 
     expect(element.textContent).to.equal(newTextContent);
@@ -163,16 +163,16 @@ describe("Utility function to handle EditV2 edits", () => {
           { parent, node: node1, reference },
           { parent, node: node2, reference },
         ],
-        {}
-      )
+        {},
+      ),
     );
     expect(sclDoc.documentElement.querySelector("test1")).to.have.property(
       "nextSibling",
-      node2
+      node2,
     );
     expect(sclDoc.documentElement.querySelector("test2")).to.have.property(
       "nextSibling",
-      reference
+      reference,
     );
 
     expect(editor.docVersion).to.equal(1);
@@ -215,8 +215,8 @@ describe("Utility function to handle EditV2 edits", () => {
                 edit.node.nextSibling === edit.reference
               );
             return true;
-          }
-        )
+          },
+        ),
       ));
 
     it("set's an element's textContent on SetTextContent edit events", () =>
@@ -230,14 +230,14 @@ describe("Utility function to handle EditV2 edits", () => {
             editor.dispatchEvent(newEditEventV2(edit));
 
             return edit.element.textContent === edit.textContent;
-          }
-        )
+          },
+        ),
       ));
 
     it("updates default- and foreign-namespace attributes on UpdateNS events", () =>
       assert(
         property(
-          testDocs.chain(([{ nodes }]) => setAttribute(nodes)),
+          testDocs.chain(([{ nodes }]) => setAttributes(nodes)),
           (edit) => {
             editor.dispatchEvent(newEditEventV2(edit));
             return (
@@ -245,11 +245,11 @@ describe("Utility function to handle EditV2 edits", () => {
                 .filter(([name]) => xmlAttributeName.test(name))
                 .map((entry) => entry as [string, string | null])
                 .every(
-                  ([name, value]) => edit.element.getAttribute(name) === value
+                  ([name, value]) => edit.element.getAttribute(name) === value,
                 ) &&
               Object.entries(edit.attributesNS)
                 .map(
-                  (entry) => entry as [string, Record<string, string | null>]
+                  (entry) => entry as [string, Record<string, string | null>],
                 )
                 .every(([ns, attributes]) =>
                   Object.entries(attributes)
@@ -261,13 +261,13 @@ describe("Utility function to handle EditV2 edits", () => {
                           ns,
                           name.includes(":")
                             ? <string>name.split(":", 2)[1]
-                            : name
-                        ) === value
-                    )
+                            : name,
+                        ) === value,
+                    ),
                 )
             );
-          }
-        )
+          },
+        ),
       )).timeout(20000);
 
     it("removes elements on Remove edit events", () =>
@@ -277,8 +277,8 @@ describe("Utility function to handle EditV2 edits", () => {
           ({ node }) => {
             editor.dispatchEvent(newEditEventV2({ node }));
             return !node.parentNode;
-          }
-        )
+          },
+        ),
       ));
 
     it("undoes up to n edits on undo(n) call", () =>
@@ -287,21 +287,21 @@ describe("Utility function to handle EditV2 edits", () => {
           testDocs.chain((docs) => undoRedoTestCases(...docs)),
           ({ doc1, doc2, edits, squash }: UndoRedoTestCase) => {
             const [oldDoc1, oldDoc2] = [doc1, doc2].map((doc) =>
-              doc.cloneNode(true)
+              doc.cloneNode(true),
             );
             edits.forEach((a: EditV2) => {
               editor.dispatchEvent(newEditEventV2(a, { squash }));
             });
             if (editor.editCount) editor.undo(editor.editCount);
             expect(doc1).to.satisfy((doc: XMLDocument) =>
-              doc.isEqualNode(oldDoc1)
+              doc.isEqualNode(oldDoc1),
             );
             expect(doc2).to.satisfy((doc: XMLDocument) =>
-              doc.isEqualNode(oldDoc2)
+              doc.isEqualNode(oldDoc2),
             );
             return true;
-          }
-        )
+          },
+        ),
       )).timeout(20000);
 
     it("redoes up to n edits on redo(n) call", () =>
@@ -313,7 +313,7 @@ describe("Utility function to handle EditV2 edits", () => {
               editor.dispatchEvent(newEditEventV2(a));
             });
             const [oldDoc1, oldDoc2] = [doc1, doc2].map((doc) =>
-              new XMLSerializer().serializeToString(doc)
+              new XMLSerializer().serializeToString(doc),
             );
 
             if (edits.length) {
@@ -321,11 +321,11 @@ describe("Utility function to handle EditV2 edits", () => {
               editor.redo(edits.length + 1);
             }
             const [newDoc1, newDoc2] = [doc1, doc2].map((doc) =>
-              new XMLSerializer().serializeToString(doc)
+              new XMLSerializer().serializeToString(doc),
             );
             return oldDoc1 === newDoc1 && oldDoc2 === newDoc2;
-          }
-        )
+          },
+        ),
       )).timeout(20000);
   });
 });

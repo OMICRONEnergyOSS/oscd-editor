@@ -3,7 +3,9 @@ import { state } from "lit/decorators.js";
 
 import { EditEventV2 } from "./edit-event.js";
 
-import { EditV2, handleEdit } from "./handleEdit.js";
+import { EditV2 } from "./editv2.js";
+
+import { handleEdit } from "./handleEdit.js";
 
 export type LogEntry = {
   undo: EditV2;
@@ -117,7 +119,7 @@ export class Editor extends LitElement {
     super();
 
     this.addEventListener("oscd-edit-v2", (event) =>
-      this.handleEditEvent(event)
+      this.handleEditEvent(event),
     );
   }
 }

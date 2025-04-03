@@ -1,4 +1,4 @@
-import { EditV2 } from "./handleEdit.js";
+import { EditV2 } from "./editv2.js";
 
 export type EditDetailV2<E extends EditV2 = EditV2> = {
   edit: E;

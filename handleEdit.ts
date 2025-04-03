@@ -132,14 +132,15 @@ function handleSetAttributes({
 
 function handleRemove({ node }: Remove): Insert | [] {
   const { parentNode: parent, nextSibling: reference } = node;
+
+  if (!parent) return [];
+
   node.parentNode?.removeChild(node);
-  if (parent)
-    return {
-      node,
-      parent,
-      reference,
-    };
-  return [];
+  return {
+    node,
+    parent,
+    reference,
+  };
 }
 
 function handleInsert({
