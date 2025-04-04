@@ -25,22 +25,18 @@
     "test:watch": "npm run build && concurrently -k -r \"tsc -b --watch --preserveWatchOutput\" \"wtr --watch --coverage\"",
     "build": "npx rimraf dist && tsc"
   },
-  "dependencies": {
-    "lit": "^2.2.7"
-  },
   "devDependencies": {
-    "@types/mocha": "^10.0.8",
     "@open-wc/testing": "3.2.2",
+    "@types/mocha": "^10.0.8",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
-    "@web/dev-server-esbuild": "1.0.2",
     "@web/test-runner": "0.19.0",
-    "fast-check": "^3.22.0",
     "concurrently": "^9.0.1",
     "eslint": "^9.11.1",
+    "fast-check": "^3.22.0",
     "prettier": "^3.3.3",
     "rimraf": "^3.0.2",
-    "typescript": "^5.6.2",
-    "semantic-release": "24.1.2"
+    "semantic-release": "24.1.2",
+    "typescript": "^5.6.2"
   }
 }
