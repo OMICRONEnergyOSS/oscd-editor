@@ -27,6 +27,6 @@ export {
   simpleEdit,
 } from "./testHelpers.js";
 
-export { Editor } from "./Editor.js";
+export { EditV2Editor } from "./Editor.js";
 
 export { newEditEventV2 } from "./edit-event.js";

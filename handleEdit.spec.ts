@@ -130,14 +130,14 @@ describe("handleEdit", () => {
     );
   });
 
-  it("returns an edit that undoes the original edit", () => {
+  it("returns an undo edit that undoes the original edit", () => {
     const node = sclDoc.querySelector("Substation")!;
     const undoEdit = handleEdit({ node }); // do edit
     handleEdit(undoEdit); // undo edit
     expect(sclDoc.querySelector("Substation")).to.exist;
   });
 
-  it("returns an undo the return value of which is a redo", () => {
+  it("returns the original edit when called on an undo edit", () => {
     const node = sclDoc.querySelector("Substation")!;
     const undoEdit = handleEdit({ node });
     const redoEdit = handleEdit(undoEdit);

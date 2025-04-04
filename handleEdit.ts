@@ -135,7 +135,7 @@ function handleRemove({ node }: Remove): Insert | [] {
 
   if (!parent) return [];
 
-  node.parentNode?.removeChild(node);
+  parent.removeChild(node);
   return {
     node,
     parent,

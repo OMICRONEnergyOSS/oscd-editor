@@ -17,7 +17,7 @@ export type EditEventOptions = {
 
 export function newEditEventV2<E extends EditV2>(
   edit: E,
-  options?: EditEventOptions
+  options?: EditEventOptions,
 ): EditEventV2<E> {
   return new CustomEvent<EditDetailV2<E>>("oscd-edit-v2", {
     composed: true,

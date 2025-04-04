@@ -10,9 +10,28 @@ const removeNode: Remove = {node: toBeRemovedNode}
 handleEdit(removeNode)
 ```
 
+You can also use the exported `EditV2Editor` class which keeps track of an undo/redo
+history. This class is a wrapper around the `handleEdit` function and provides
+a more user-friendly API. The `EditV2Editor` class can be used as follows:
 
-You can also use the exported `Editor` class that inherits form `LitElement` that listens on the edit as specified in [OpenSCD Core API](https://github.com/OpenEnergyTools/open-scd-core/blob/main/API.md). 
+```ts
+import { EditV2Editor } from '@openenergytools/xml-lib';
 
+const editor = new EditV2Editor();
+
+const removeNode: Remove = {node: toBeRemovedNode}
+editor.handleEdit(removeNode);
+
+expect(toBeRemovedNode.parentNode).to.not.exist;
+
+editor.undo(); // undo the latest edit
+
+expect(toBeRemovedNode.parentNode).to.exist;
+
+editor.redo(); // redo the most recently undone edit
+
+expect(toBeRemovedNode.parentNode).to.not.exist;
+```
 
 ## Linting and formatting
 
@@ -41,4 +60,4 @@ To run the tests in interactive watch mode run:
 
 This project is licensed under the Apache License 2.0.
 
-© 2024 Jakob Vogelsang
+© 2025 Jakob Vogelsang, OMICRON electronics GmbH

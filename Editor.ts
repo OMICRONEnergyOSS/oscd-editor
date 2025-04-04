@@ -1,54 +1,63 @@
-import { LitElement } from "lit";
-import { state } from "lit/decorators.js";
-
-import { EditEventV2 } from "./edit-event.js";
-
 import { EditV2 } from "./editv2.js";
 
 import { handleEdit } from "./handleEdit.js";
 
-export type LogEntry = {
-  undo: EditV2;
-  redo: EditV2;
+export type LogEntry<E> = {
+  undo: E;
+  redo: E;
   title?: string;
 };
 
-export class Editor extends LitElement {
-  @state()
-  history: LogEntry[] = [];
+export interface Editor<E> {
+  history: LogEntry<E>[];
+  docVersion: number;
+  editCount: number;
+  last: number;
+  canUndo: boolean;
+  canRedo: boolean;
 
-  @state()
-  docVersion = 0;
+  edit(edit: E, options?: { title?: string; squash?: boolean }): void;
 
-  // index of the last applied edit in history (!not its length)
-  @state()
-  editCount = 0;
+  undo(n?: number): void;
 
-  @state()
-  get last(): number {
-    return this.editCount - 1;
+  redo(n?: number): void;
+}
+
+export class EditV2Editor implements Editor<EditV2> {
+  #history: LogEntry<EditV2>[] = [];
+  get history(): LogEntry<EditV2>[] {
+    return this.#history;
   }
 
-  @state()
+  #docVersion = 0;
+  get docVersion(): number {
+    return this.#docVersion;
+  }
+
+  // index of the last applied edit in history (!not its length)
+  #editCount = 0;
+  get editCount(): number {
+    return this.#editCount;
+  }
+
+  get last(): number {
+    return this.#editCount - 1;
+  }
+
   get canUndo(): boolean {
     return this.last >= 0;
   }
 
-  @state()
   get canRedo(): boolean {
-    return this.editCount < this.history.length;
+    return this.#editCount < this.#history.length;
   }
 
-  /** The set of `XMLDocument`s currently loaded */
-  @state()
-  docs: Record<string, XMLDocument> = {};
-
-  updateVersion(): void {
-    this.docVersion += 1;
+  #updateVersion(): void {
+    this.#docVersion += 1;
   }
 
-  squashUndo(undoEdits: EditV2): EditV2 {
-    const lastHistory = this.history[this.history.length - 1];
+  #squashUndo(undoEdits: EditV2): EditV2 {
+    const lastHistory = this.#history[this.#history.length - 1];
     if (!lastHistory) return undoEdits;
 
     const lastUndo = lastHistory.undo;
@@ -64,8 +73,8 @@ export class Editor extends LitElement {
     return [undoEdits, lastUndo];
   }
 
-  squashRedo(edits: EditV2): EditV2 {
-    const lastHistory = this.history[this.history.length - 1];
+  #squashRedo(edits: EditV2): EditV2 {
+    const lastHistory = this.#history[this.#history.length - 1];
     if (!lastHistory) return edits;
 
     const lastRedo = lastHistory.redo;
@@ -81,45 +90,52 @@ export class Editor extends LitElement {
     return [lastRedo, edits];
   }
 
-  handleEditEvent(event: EditEventV2) {
-    const { edit, title } = event.detail;
-    const squash = !!event.detail.squash;
+  #updateHistory({
+    undo,
+    redo,
+    title = "",
+    squash = false,
+  }: {
+    undo: EditV2;
+    redo: EditV2;
+    title?: string;
+    squash?: boolean;
+  }) {
+    this.#history.splice(this.#editCount); // cut off history after current edit
 
-    this.history.splice(this.editCount); // cut history at editCount
+    if (squash) {
+      undo = this.#squashUndo(undo);
+      redo = this.#squashRedo(redo);
+      this.#history.pop();
+    }
 
-    const undo = squash ? this.squashUndo(handleEdit(edit)) : handleEdit(edit);
-    const redo = squash ? this.squashRedo(edit) : edit;
+    this.#history.push({ undo, redo, title });
+    this.#editCount = this.#history.length;
+    this.#updateVersion();
+  }
 
-    if (squash) this.history.pop(); // combine with last edit in history
+  edit(edit: EditV2, { title = "", squash = false } = {}): void {
+    const redo = edit;
+    const undo = handleEdit(edit);
 
-    this.history.push({ undo, redo, title });
-    this.editCount = this.history.length;
-    this.updateVersion();
+    this.#updateHistory({ undo, redo, title, squash });
   }
 
   /** Undo the last `n` [[Edit]]s committed */
   undo(n = 1) {
     if (!this.canUndo || n < 1) return;
-    handleEdit(this.history[this.last!].undo);
-    this.editCount -= 1;
-    this.updateVersion();
+    handleEdit(this.#history[this.last!].undo);
+    this.#editCount -= 1;
+    this.#updateVersion();
     if (n > 1) this.undo(n - 1);
   }
 
   /** Redo the last `n` [[Edit]]s that have been undone */
   redo(n = 1) {
     if (!this.canRedo || n < 1) return;
-    handleEdit(this.history[this.editCount].redo);
-    this.editCount += 1;
-    this.updateVersion();
+    handleEdit(this.#history[this.#editCount].redo);
+    this.#editCount += 1;
+    this.#updateVersion();
     if (n > 1) this.redo(n - 1);
-  }
-
-  constructor() {
-    super();
-
-    this.addEventListener("oscd-edit-v2", (event) =>
-      this.handleEditEvent(event),
-    );
   }
 }

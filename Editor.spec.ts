@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-import { html } from "lit";
-
-import { expect, fixture } from "@open-wc/testing";
+import { expect } from "@open-wc/testing";
 
 import { assert, property } from "fast-check";
 
@@ -18,20 +16,16 @@ import {
   xmlAttributeName,
 } from "./testHelpers.js";
 
-import { newEditEventV2 } from "./edit-event.js";
-
 import { EditV2, isSetAttributes, isSetTextContent } from "./editv2.js";
 
-import { Editor } from "./Editor.js";
-
-customElements.define("editor-element", Editor);
+import { Editor, EditV2Editor } from "./Editor.js";
 
 describe("Utility function to handle EditV2 edits", () => {
-  let editor: Editor;
+  let editor: Editor<EditV2>;
   let sclDoc: XMLDocument;
 
   beforeEach(async () => {
-    editor = await fixture<Editor>(html`<editor-element></editor-element>`);
+    editor = new EditV2Editor();
     sclDoc = new DOMParser().parseFromString(sclDocString, "application/xml");
   });
 
@@ -39,7 +33,7 @@ describe("Utility function to handle EditV2 edits", () => {
     const parent = sclDoc.documentElement;
     const node = sclDoc.createElement("test");
     const reference = sclDoc.querySelector("Substation");
-    editor.dispatchEvent(newEditEventV2({ parent, node, reference }, {}));
+    editor.edit({ parent, node, reference }, {});
     expect(sclDoc.documentElement.querySelector("test")).to.have.property(
       "nextSibling",
       reference,
@@ -48,39 +42,37 @@ describe("Utility function to handle EditV2 edits", () => {
 
   it("removes an element on Remove", () => {
     const node = sclDoc.querySelector("Substation")!;
-    editor.dispatchEvent(newEditEventV2({ node }, {}));
+    editor.edit({ node }, {});
 
     expect(sclDoc.querySelector("Substation")).to.not.exist;
   });
 
   it("updates an element's attributes on SetAttributes", () => {
     const element = sclDoc.querySelector("Substation")!;
-    editor.dispatchEvent(
-      newEditEventV2(
-        {
-          element,
-          attributes: {
-            name: "A2",
-            desc: null,
-            ["__proto__"]: "a string", // covers a rare edge case branch
+    editor.edit(
+      {
+        element,
+        attributes: {
+          name: "A2",
+          desc: null,
+          ["__proto__"]: "a string", // covers a rare edge case branch
+        },
+        attributesNS: {
+          "http://example.org/myns": {
+            "myns:attr": "value1",
+            "myns:attr2": "value1",
           },
-          attributesNS: {
-            "http://example.org/myns": {
-              "myns:attr": "value1",
-              "myns:attr2": "value1",
-            },
-            "http://example.org/myns2": {
-              attr: "value2",
-              attr2: "value2",
-            },
-            "http://example.org/myns3": {
-              attr: "value3",
-              attr2: "value3",
-            },
+          "http://example.org/myns2": {
+            attr: "value2",
+            attr2: "value2",
+          },
+          "http://example.org/myns3": {
+            attr: "value3",
+            attr2: "value3",
           },
         },
-        {},
-      ),
+      },
+      {},
     );
 
     expect(element.getAttribute("name")).to.equal("A2");
@@ -98,12 +90,10 @@ describe("Utility function to handle EditV2 edits", () => {
     const element = sclDoc.querySelector("SCL")!;
 
     const newTextContent = "someNewTextContent";
-    editor.dispatchEvent(
-      newEditEventV2({
-        element,
-        textContent: newTextContent,
-      }),
-    );
+    editor.edit({
+      element,
+      textContent: newTextContent,
+    });
 
     expect(element.textContent).to.equal(newTextContent);
   });
@@ -139,8 +129,8 @@ describe("Utility function to handle EditV2 edits", () => {
       textContent: "someNewTextContent",
     };
 
-    editor.dispatchEvent(newEditEventV2(edit1, {}));
-    editor.dispatchEvent(newEditEventV2(edit2, { squash: true }));
+    editor.edit(edit1, {});
+    editor.edit(edit2, { squash: true });
 
     const history = editor.history;
     expect(history).to.have.length(1);
@@ -157,14 +147,12 @@ describe("Utility function to handle EditV2 edits", () => {
     const reference = sclDoc.querySelector("Substation");
     const node1 = sclDoc.createElement("test1");
     const node2 = sclDoc.createElement("test2");
-    editor.dispatchEvent(
-      newEditEventV2(
-        [
-          { parent, node: node1, reference },
-          { parent, node: node2, reference },
-        ],
-        {},
-      ),
+    editor.edit(
+      [
+        { parent, node: node1, reference },
+        { parent, node: node2, reference },
+      ],
+      {},
     );
     expect(sclDoc.documentElement.querySelector("test1")).to.have.property(
       "nextSibling",
@@ -181,7 +169,7 @@ describe("Utility function to handle EditV2 edits", () => {
   it("undoes a committed edit on undo() call", () => {
     const node = sclDoc.querySelector("Substation")!;
 
-    editor.dispatchEvent(newEditEventV2({ node }));
+    editor.edit({ node });
     editor.undo();
 
     expect(sclDoc.querySelector("Substation")).to.exist;
@@ -191,7 +179,7 @@ describe("Utility function to handle EditV2 edits", () => {
   it("redoes an undone edit on redo() call", () => {
     const node = sclDoc.querySelector("Substation")!;
 
-    editor.dispatchEvent(newEditEventV2({ node }));
+    editor.edit({ node });
     editor.undo();
     editor.redo();
 
@@ -208,7 +196,7 @@ describe("Utility function to handle EditV2 edits", () => {
             return insert(nodes);
           }),
           (edit) => {
-            editor.dispatchEvent(newEditEventV2(edit));
+            editor.edit(edit);
             if (isValidInsert(edit))
               return (
                 edit.node.parentElement === edit.parent &&
@@ -227,7 +215,7 @@ describe("Utility function to handle EditV2 edits", () => {
             return setTextContent(nodes);
           }),
           (edit) => {
-            editor.dispatchEvent(newEditEventV2(edit));
+            editor.edit(edit);
 
             return edit.element.textContent === edit.textContent;
           },
@@ -239,7 +227,7 @@ describe("Utility function to handle EditV2 edits", () => {
         property(
           testDocs.chain(([{ nodes }]) => setAttributes(nodes)),
           (edit) => {
-            editor.dispatchEvent(newEditEventV2(edit));
+            editor.edit(edit);
             return (
               Object.entries(edit.attributes)
                 .filter(([name]) => xmlAttributeName.test(name))
@@ -275,7 +263,7 @@ describe("Utility function to handle EditV2 edits", () => {
         property(
           testDocs.chain(([{ nodes }]) => remove(nodes)),
           ({ node }) => {
-            editor.dispatchEvent(newEditEventV2({ node }));
+            editor.edit({ node });
             return !node.parentNode;
           },
         ),
@@ -290,7 +278,7 @@ describe("Utility function to handle EditV2 edits", () => {
               doc.cloneNode(true),
             );
             edits.forEach((a: EditV2) => {
-              editor.dispatchEvent(newEditEventV2(a, { squash }));
+              editor.edit(a, { squash });
             });
             if (editor.editCount) editor.undo(editor.editCount);
             expect(doc1).to.satisfy((doc: XMLDocument) =>
@@ -310,7 +298,7 @@ describe("Utility function to handle EditV2 edits", () => {
           testDocs.chain((docs) => undoRedoTestCases(...docs)),
           ({ doc1, doc2, edits }: UndoRedoTestCase) => {
             edits.forEach((a: EditV2) => {
-              editor.dispatchEvent(newEditEventV2(a));
+              editor.edit(a);
             });
             const [oldDoc1, oldDoc2] = [doc1, doc2].map((doc) =>
               new XMLSerializer().serializeToString(doc),
