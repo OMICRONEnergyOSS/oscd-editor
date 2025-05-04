@@ -18,14 +18,15 @@ import {
 
 import { EditV2, isSetAttributes, isSetTextContent } from "./editv2.js";
 
-import { Editor, EditV2Editor } from "./Editor.js";
+import { XMLEditor } from "./XMLEditor.js";
+import { Transactor } from "./Transactor.js";
 
 describe("Utility function to handle EditV2 edits", () => {
-  let editor: Editor<EditV2>;
+  let editor: Transactor<EditV2>;
   let sclDoc: XMLDocument;
 
   beforeEach(async () => {
-    editor = new EditV2Editor();
+    editor = new XMLEditor();
     sclDoc = new DOMParser().parseFromString(sclDocString, "application/xml");
   });
 
@@ -33,7 +34,7 @@ describe("Utility function to handle EditV2 edits", () => {
     const parent = sclDoc.documentElement;
     const node = sclDoc.createElement("test");
     const reference = sclDoc.querySelector("Substation");
-    editor.edit({ parent, node, reference }, {});
+    editor.commit({ parent, node, reference });
     expect(sclDoc.documentElement.querySelector("test")).to.have.property(
       "nextSibling",
       reference,
@@ -42,14 +43,14 @@ describe("Utility function to handle EditV2 edits", () => {
 
   it("removes an element on Remove", () => {
     const node = sclDoc.querySelector("Substation")!;
-    editor.edit({ node }, {});
+    editor.commit({ node });
 
     expect(sclDoc.querySelector("Substation")).to.not.exist;
   });
 
   it("updates an element's attributes on SetAttributes", () => {
     const element = sclDoc.querySelector("Substation")!;
-    editor.edit(
+    editor.commit(
       {
         element,
         attributes: {
@@ -90,7 +91,7 @@ describe("Utility function to handle EditV2 edits", () => {
     const element = sclDoc.querySelector("SCL")!;
 
     const newTextContent = "someNewTextContent";
-    editor.edit({
+    editor.commit({
       element,
       textContent: newTextContent,
     });
@@ -129,17 +130,14 @@ describe("Utility function to handle EditV2 edits", () => {
       textContent: "someNewTextContent",
     };
 
-    editor.edit(edit1, {});
-    editor.edit(edit2, { squash: true });
+    editor.commit(edit1, {});
+    editor.commit(edit2, { squash: true });
 
-    const history = editor.history;
+    const history = editor.past;
     expect(history).to.have.length(1);
 
     expect((history[0].undo as EditV2[])[0]).to.satisfy(isSetTextContent);
     expect((history[0].undo as EditV2[])[1]).to.satisfy(isSetAttributes);
-
-    expect(editor.docVersion).to.equal(2);
-    expect(editor.editCount).to.equal(1);
   });
 
   it("processes complex edits in the given order", () => {
@@ -147,7 +145,7 @@ describe("Utility function to handle EditV2 edits", () => {
     const reference = sclDoc.querySelector("Substation");
     const node1 = sclDoc.createElement("test1");
     const node2 = sclDoc.createElement("test2");
-    editor.edit(
+    editor.commit(
       [
         { parent, node: node1, reference },
         { parent, node: node2, reference },
@@ -162,29 +160,25 @@ describe("Utility function to handle EditV2 edits", () => {
       "nextSibling",
       reference,
     );
-
-    expect(editor.docVersion).to.equal(1);
   });
 
   it("undoes a committed edit on undo() call", () => {
     const node = sclDoc.querySelector("Substation")!;
 
-    editor.edit({ node });
+    editor.commit({ node });
     editor.undo();
 
     expect(sclDoc.querySelector("Substation")).to.exist;
-    expect(editor.docVersion).to.equal(2);
   });
 
   it("redoes an undone edit on redo() call", () => {
     const node = sclDoc.querySelector("Substation")!;
 
-    editor.edit({ node });
+    editor.commit({ node });
     editor.undo();
     editor.redo();
 
     expect(sclDoc.querySelector("Substation")).to.be.null;
-    expect(editor.docVersion).to.equal(3);
   });
 
   describe("generally", () => {
@@ -196,7 +190,7 @@ describe("Utility function to handle EditV2 edits", () => {
             return insert(nodes);
           }),
           (edit) => {
-            editor.edit(edit);
+            editor.commit(edit);
             if (isValidInsert(edit))
               return (
                 edit.node.parentElement === edit.parent &&
@@ -215,7 +209,7 @@ describe("Utility function to handle EditV2 edits", () => {
             return setTextContent(nodes);
           }),
           (edit) => {
-            editor.edit(edit);
+            editor.commit(edit);
 
             return edit.element.textContent === edit.textContent;
           },
@@ -227,7 +221,7 @@ describe("Utility function to handle EditV2 edits", () => {
         property(
           testDocs.chain(([{ nodes }]) => setAttributes(nodes)),
           (edit) => {
-            editor.edit(edit);
+            editor.commit(edit);
             return (
               Object.entries(edit.attributes)
                 .filter(([name]) => xmlAttributeName.test(name))
@@ -263,7 +257,7 @@ describe("Utility function to handle EditV2 edits", () => {
         property(
           testDocs.chain(([{ nodes }]) => remove(nodes)),
           ({ node }) => {
-            editor.edit({ node });
+            editor.commit({ node });
             return !node.parentNode;
           },
         ),
@@ -278,9 +272,9 @@ describe("Utility function to handle EditV2 edits", () => {
               doc.cloneNode(true),
             );
             edits.forEach((a: EditV2) => {
-              editor.edit(a, { squash });
+              editor.commit(a, { squash });
             });
-            if (editor.editCount) editor.undo(editor.editCount);
+            while (editor.canUndo) editor.undo();
             expect(doc1).to.satisfy((doc: XMLDocument) =>
               doc.isEqualNode(oldDoc1),
             );
@@ -298,16 +292,14 @@ describe("Utility function to handle EditV2 edits", () => {
           testDocs.chain((docs) => undoRedoTestCases(...docs)),
           ({ doc1, doc2, edits }: UndoRedoTestCase) => {
             edits.forEach((a: EditV2) => {
-              editor.edit(a);
+              editor.commit(a);
             });
             const [oldDoc1, oldDoc2] = [doc1, doc2].map((doc) =>
               new XMLSerializer().serializeToString(doc),
             );
 
-            if (edits.length) {
-              editor.undo(edits.length + 1);
-              editor.redo(edits.length + 1);
-            }
+            while (editor.canUndo) editor.undo();
+            while (editor.canRedo) editor.redo();
             const [newDoc1, newDoc2] = [doc1, doc2].map((doc) =>
               new XMLSerializer().serializeToString(doc),
             );

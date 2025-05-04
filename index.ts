@@ -27,6 +27,8 @@ export {
   simpleEdit,
 } from "./testHelpers.js";
 
-export { EditV2Editor } from "./Editor.js";
+export { XMLEditor } from "./XMLEditor.js";
+
+export type { Commit, CommitOptions, Transactor, TransactedCallback } from "./Transactor.js";
 
 export { newEditEventV2 } from "./edit-event.js";

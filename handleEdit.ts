@@ -172,7 +172,7 @@ export function handleEdit(edit: EditV2): EditV2 {
   if (isRemove(edit)) return handleRemove(edit);
   if (isSetAttributes(edit)) return handleSetAttributes(edit);
   if (isSetTextContent(edit)) return handleSetTextContent(edit);
-  if (isComplex(edit)) return edit.map((edit) => handleEdit(edit)).reverse();
+  if (isComplex(edit)) return edit.map((edit) => handleEdit(edit)).reverse().flat(Infinity as 1);
 
   console.error(`Invalid edit provided: ${edit}`);
 
