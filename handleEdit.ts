@@ -30,26 +30,6 @@ function handleSetTextContent({
   return [undoTextContent, ...restoreChildNodes];
 }
 
-function uniqueNSPrefix(element: Element, ns: string): string {
-  let i = 1;
-  const attributes = Array.from(element.attributes);
-  const hasSamePrefix = (attribute: Attr) =>
-    attribute.prefix === `ens${i}` && attribute.namespaceURI !== ns;
-  const nsOrNull = new Set([null, ns]);
-  const differentNamespace = (prefix: string) =>
-    !nsOrNull.has(element.lookupNamespaceURI(prefix));
-  while (differentNamespace(`ens${i}`) || attributes.find(hasSamePrefix))
-    i += 1;
-  return `ens${i}`;
-}
-
-const xmlAttributeName =
-  /^(?!xml|Xml|xMl|xmL|XMl|xML|XmL|XML)[A-Za-z_][A-Za-z0-9-_.]*(:[A-Za-z_][A-Za-z0-9-_.]*)?$/;
-
-function validName(name: string): boolean {
-  return xmlAttributeName.test(name);
-}
-
 function handleSetAttributes({
   element,
   attributes,
@@ -80,7 +60,6 @@ function handleSetAttributes({
   // save element's namespaced attributes for undo
   Object.entries(attributesNS).forEach(([ns, attrs]) => {
     Object.keys(attrs!)
-      .filter(validName)
       .reverse()
       .forEach((name) => {
         oldAttributesNS[ns] = {
@@ -88,11 +67,9 @@ function handleSetAttributes({
           [name]: element.getAttributeNS(ns, name.split(":").pop()!),
         };
       });
-    Object.keys(attrs!)
-      .filter((name) => !validName(name))
-      .forEach((name) => {
-        delete oldAttributesNS[ns]![name];
-      });
+    Object.keys(attrs!).forEach((name) => {
+      delete oldAttributesNS[ns]![name];
+    });
   });
 
   // change element's namespaced attributes
@@ -101,21 +78,13 @@ function handleSetAttributes({
       string,
       Partial<Record<string, string | null>>,
     ];
-    for (const entry of Object.entries(attrs).filter(([name]) =>
-      validName(name),
-    )) {
+    for (const entry of Object.entries(attrs)) {
       try {
         const [name, value] = entry as [string, string | null];
         if (value === null) {
           element.removeAttributeNS(ns, name.split(":").pop()!);
         } else {
-          let qualifiedName = name;
-          if (!qualifiedName.includes(":")) {
-            let prefix = element.lookupPrefix(ns);
-            if (!prefix) prefix = uniqueNSPrefix(element, ns);
-            qualifiedName = `${prefix}:${name}`;
-          }
-          element.setAttributeNS(ns, qualifiedName, value);
+          element.setAttributeNS(ns, name, value);
         }
       } catch (_e) {
         delete oldAttributesNS[ns]![entry[0]];
@@ -172,7 +141,11 @@ export function handleEdit(edit: EditV2): EditV2 {
   if (isRemove(edit)) return handleRemove(edit);
   if (isSetAttributes(edit)) return handleSetAttributes(edit);
   if (isSetTextContent(edit)) return handleSetTextContent(edit);
-  if (isComplex(edit)) return edit.map((edit) => handleEdit(edit)).reverse().flat(Infinity as 1);
+  if (isComplex(edit))
+    return edit
+      .map((edit) => handleEdit(edit))
+      .reverse()
+      .flat(Infinity as 1);
 
   console.error(`Invalid edit provided: ${edit}`);
 

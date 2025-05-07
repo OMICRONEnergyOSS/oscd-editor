@@ -71,19 +71,16 @@ describe("handleEdit", () => {
         name: "A2",
         desc: null,
         ["__proto__"]: "a string", // covers a rare edge case branch
+        "42isnotValid": "something",
       },
       attributesNS: {
+        "http://example.org/somePreexistingExtensionNamespace": {
+          "ens1:test": null,
+        },
         "http://example.org/myns": {
           "myns:attr": "value1",
           "myns:attr2": "value1",
-        },
-        "http://example.org/myns2": {
-          attr: "value2",
-          attr2: "value2",
-        },
-        "http://example.org/myns3": {
-          attr: "value3",
-          attr2: "value3",
+          "myns:-is-not-valid-either": "something",
         },
       },
     });
@@ -93,10 +90,17 @@ describe("handleEdit", () => {
     expect(element.getAttribute("__proto__")).to.equal("a string");
     expect(element.getAttribute("myns:attr")).to.equal("value1");
     expect(element.getAttribute("myns:attr2")).to.equal("value1");
-    expect(element.getAttribute("ens2:attr")).to.equal("value2");
-    expect(element.getAttribute("ens2:attr2")).to.equal("value2");
-    expect(element.getAttribute("ens3:attr")).to.equal("value3");
-    expect(element.getAttribute("ens3:attr2")).to.equal("value3");
+    expect(element.getAttribute("42isnotValid")).to.not.exist;
+    expect(
+      element.getAttributeNS("http://example.org/myns", "-is-not-valid-either"),
+    ).to.not.exist;
+    expect(element.getAttribute("myns:-is-not-valid-either")).to.not.exist;
+    expect(
+      element.getAttributeNS(
+        "http://example.org/somePreexistingExtensionNamespace",
+        "test",
+      ),
+    ).to.be.null;
   });
 
   it("sets an element's textContent given a SetTextContent", () => {
@@ -165,7 +169,7 @@ describe("handleEdit", () => {
         ),
       ));
 
-    it("set's an element's textContent given SetTextContents", () =>
+    it("sets an element's textContent given SetTextContents", () =>
       assert(
         property(
           testDocs.chain(([doc1, doc2]) => {
@@ -179,23 +183,6 @@ describe("handleEdit", () => {
           },
         ),
       ));
-
-    it("applies the last attribute of the same unprefixed name, per namespace", () => {
-      const element = sclDoc.createElement("test");
-      const xmlTextBefore = new XMLSerializer().serializeToString(element);
-      const testEdit = {
-        element,
-        attributes: {},
-        attributesNS: { "http://a.aa": { "A:Y": null, "B:Y": "abc", Y: "" } },
-      };
-      const undo = handleEdit(testEdit);
-      expect(element.getAttributeNS("http://a.aa", "Y")).to.equal("");
-
-      handleEdit(undo);
-      expect(new XMLSerializer().serializeToString(element)).to.equal(
-        xmlTextBefore,
-      );
-    });
 
     it("updates attributes given SetAttributes", () =>
       assert(

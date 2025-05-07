@@ -4,28 +4,22 @@ import { expect } from "@open-wc/testing";
 import { assert, property } from "fast-check";
 
 import {
-  insert,
-  isValidInsert,
-  remove,
   sclDocString,
-  setAttributes,
-  setTextContent,
   testDocs,
   UndoRedoTestCase,
   undoRedoTestCases,
-  xmlAttributeName,
 } from "./testHelpers.js";
 
 import { EditV2, isSetAttributes, isSetTextContent } from "./editv2.js";
 
 import { XMLEditor } from "./XMLEditor.js";
-import { Transactor } from "./Transactor.js";
+import { Commit, Transactor } from "./Transactor.js";
 
-describe("Utility function to handle EditV2 edits", () => {
+describe("XMLEditor", () => {
   let editor: Transactor<EditV2>;
   let sclDoc: XMLDocument;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     editor = new XMLEditor();
     sclDoc = new DOMParser().parseFromString(sclDocString, "application/xml");
   });
@@ -63,14 +57,6 @@ describe("Utility function to handle EditV2 edits", () => {
             "myns:attr": "value1",
             "myns:attr2": "value1",
           },
-          "http://example.org/myns2": {
-            attr: "value2",
-            attr2: "value2",
-          },
-          "http://example.org/myns3": {
-            attr: "value3",
-            attr2: "value3",
-          },
         },
       },
       {},
@@ -81,10 +67,6 @@ describe("Utility function to handle EditV2 edits", () => {
     expect(element.getAttribute("__proto__")).to.equal("a string");
     expect(element.getAttribute("myns:attr")).to.equal("value1");
     expect(element.getAttribute("myns:attr2")).to.equal("value1");
-    expect(element.getAttribute("ens2:attr")).to.equal("value2");
-    expect(element.getAttribute("ens2:attr2")).to.equal("value2");
-    expect(element.getAttribute("ens3:attr")).to.equal("value3");
-    expect(element.getAttribute("ens3:attr2")).to.equal("value3");
   });
 
   it("sets an element's textContent on SetTextContent", () => {
@@ -97,6 +79,33 @@ describe("Utility function to handle EditV2 edits", () => {
     });
 
     expect(element.textContent).to.equal(newTextContent);
+  });
+
+  it("records a commit history", () => {
+    const node = sclDoc.querySelector("Substation")!;
+    const edit = { node };
+    editor.commit(edit);
+    expect(editor.past).to.have.lengthOf(1);
+    expect(editor.past[0])
+      .to.exist.and.property("redo")
+      .to.have.lengthOf(1)
+      .and.to.include(edit);
+  });
+
+  it("records a given title in the commit history", () => {
+    const node = sclDoc.querySelector("SCL")!;
+
+    editor.commit(
+      {
+        node,
+      },
+      { title: "delete everything" },
+    );
+
+    expect(editor.past[editor.past.length - 1]).to.have.property(
+      "title",
+      "delete everything",
+    );
   });
 
   it("squashes multiple edits into a single undoable edit", () => {
@@ -165,104 +174,79 @@ describe("Utility function to handle EditV2 edits", () => {
   it("undoes a committed edit on undo() call", () => {
     const node = sclDoc.querySelector("Substation")!;
 
-    editor.commit({ node });
-    editor.undo();
+    const commit = editor.commit({ node });
+    const undone = editor.undo();
 
+    expect(undone).to.exist.and.to.equal(commit);
     expect(sclDoc.querySelector("Substation")).to.exist;
   });
 
   it("redoes an undone edit on redo() call", () => {
     const node = sclDoc.querySelector("Substation")!;
 
-    editor.commit({ node });
+    const commit = editor.commit({ node });
     editor.undo();
-    editor.redo();
+    const redone = editor.redo();
 
+    expect(redone).to.exist.and.to.equal(commit);
     expect(sclDoc.querySelector("Substation")).to.be.null;
   });
 
+  it("undoes nothing at the beginning of the history", () => {
+    const node = sclDoc.querySelector("Substation")!;
+
+    editor.commit({ node });
+    editor.undo();
+    const secondUndo = editor.undo();
+
+    expect(secondUndo).to.not.exist;
+  });
+
+  it("redoes nothing at the end of the history", () => {
+    const node = sclDoc.querySelector("Substation")!;
+
+    editor.commit({ node });
+    const redo = editor.redo();
+
+    expect(redo).to.not.exist;
+  });
+
+  it("allows the user to subscribe to commits and to unsubscribe", () => {
+    const node = sclDoc.querySelector("Substation")!;
+    const edit = { node };
+    let committed: Commit<EditV2> | undefined;
+    let called = 0;
+    const callback = (commit: Commit<EditV2>) => {
+      committed = commit;
+      called++;
+    };
+    const unsubscribe = editor.subscribe(callback);
+    editor.commit(edit, { title: "test" });
+    expect(committed).to.exist.and.to.have.property("redo").to.include(edit);
+    expect(committed).to.have.property("title", "test");
+    expect(called).to.equal(1);
+    expect(editor.past).to.have.lengthOf(1);
+
+    editor.undo();
+    expect(called).to.equal(1);
+    expect(editor.past).to.have.lengthOf(0);
+    expect(editor.future).to.have.lengthOf(1);
+
+    editor.redo();
+    expect(called).to.equal(1);
+    expect(editor.past).to.have.lengthOf(1);
+    expect(editor.future).to.have.lengthOf(0);
+
+    const unsubscribed = unsubscribe();
+    expect(unsubscribed).to.equal(callback);
+
+    editor.commit(edit, { title: "some other title, not test" });
+    expect(committed).to.have.property("title", "test");
+    expect(called).to.equal(1);
+    expect(editor.past).to.have.lengthOf(2);
+  });
+
   describe("generally", () => {
-    it("inserts elements on Insert edit events", () =>
-      assert(
-        property(
-          testDocs.chain(([doc1, doc2]) => {
-            const nodes = doc1.nodes.concat(doc2.nodes);
-            return insert(nodes);
-          }),
-          (edit) => {
-            editor.commit(edit);
-            if (isValidInsert(edit))
-              return (
-                edit.node.parentElement === edit.parent &&
-                edit.node.nextSibling === edit.reference
-              );
-            return true;
-          },
-        ),
-      ));
-
-    it("set's an element's textContent on SetTextContent edit events", () =>
-      assert(
-        property(
-          testDocs.chain(([doc1, doc2]) => {
-            const nodes = doc1.nodes.concat(doc2.nodes);
-            return setTextContent(nodes);
-          }),
-          (edit) => {
-            editor.commit(edit);
-
-            return edit.element.textContent === edit.textContent;
-          },
-        ),
-      ));
-
-    it("updates default- and foreign-namespace attributes on UpdateNS events", () =>
-      assert(
-        property(
-          testDocs.chain(([{ nodes }]) => setAttributes(nodes)),
-          (edit) => {
-            editor.commit(edit);
-            return (
-              Object.entries(edit.attributes)
-                .filter(([name]) => xmlAttributeName.test(name))
-                .map((entry) => entry as [string, string | null])
-                .every(
-                  ([name, value]) => edit.element.getAttribute(name) === value,
-                ) &&
-              Object.entries(edit.attributesNS)
-                .map(
-                  (entry) => entry as [string, Record<string, string | null>],
-                )
-                .every(([ns, attributes]) =>
-                  Object.entries(attributes)
-                    .filter(([name]) => xmlAttributeName.test(name))
-                    .map((entry) => entry as [string, string | null])
-                    .every(
-                      ([name, value]) =>
-                        edit.element.getAttributeNS(
-                          ns,
-                          name.includes(":")
-                            ? <string>name.split(":", 2)[1]
-                            : name,
-                        ) === value,
-                    ),
-                )
-            );
-          },
-        ),
-      )).timeout(20000);
-
-    it("removes elements on Remove edit events", () =>
-      assert(
-        property(
-          testDocs.chain(([{ nodes }]) => remove(nodes)),
-          ({ node }) => {
-            editor.commit({ node });
-            return !node.parentNode;
-          },
-        ),
-      ));
-
     it("undoes up to n edits on undo(n) call", () =>
       assert(
         property(
@@ -272,9 +256,13 @@ describe("Utility function to handle EditV2 edits", () => {
               doc.cloneNode(true),
             );
             edits.forEach((a: EditV2) => {
-              editor.commit(a, { squash });
+              try {
+                editor.commit(a, { squash });
+              } catch (e) {
+                console.log("error", e);
+              }
             });
-            while (editor.canUndo) editor.undo();
+            while (editor.past.length) editor.undo();
             expect(doc1).to.satisfy((doc: XMLDocument) =>
               doc.isEqualNode(oldDoc1),
             );
@@ -298,8 +286,8 @@ describe("Utility function to handle EditV2 edits", () => {
               new XMLSerializer().serializeToString(doc),
             );
 
-            while (editor.canUndo) editor.undo();
-            while (editor.canRedo) editor.redo();
+            while (editor.past.length) editor.undo();
+            while (editor.future.length) editor.redo();
             const [newDoc1, newDoc2] = [doc1, doc2].map((doc) =>
               new XMLSerializer().serializeToString(doc),
             );

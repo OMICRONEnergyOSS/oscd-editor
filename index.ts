@@ -29,6 +29,11 @@ export {
 
 export { XMLEditor } from "./XMLEditor.js";
 
-export type { Commit, CommitOptions, Transactor, TransactedCallback } from "./Transactor.js";
+export type {
+  Commit,
+  CommitOptions,
+  Transactor,
+  TransactedCallback,
+} from "./Transactor.js";
 
 export { newEditEventV2 } from "./edit-event.js";

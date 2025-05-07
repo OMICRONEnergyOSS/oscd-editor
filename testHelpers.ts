@@ -9,6 +9,7 @@ import {
   oneof,
   record,
   string as stringArbitrary,
+  stringMatching,
   tuple,
   webUrl,
 } from "fast-check";
@@ -21,8 +22,11 @@ import {
   SetTextContent,
 } from "./editv2.js";
 
-export const xmlAttributeName =
-  /^(?!xml|Xml|xMl|xmL|XMl|xML|XmL|XML)[A-Za-z_][A-Za-z0-9-_.]*(:[A-Za-z_][A-Za-z0-9-_.]*)?$/;
+export const xmlAttributeName = /^[A-Za-z_][A-Za-z0-9-_.]*$/;
+export const xmlNamespacePrefix = /^[A-Za-z_][A-Za-z0-9-_.]*$/;
+export function xmlPrefixedAttributeName(prefix: string) {
+  return new RegExp("^" + prefix + ":[A-Za-z_][A-Za-z0-9-_.]*$");
+}
 
 export function descendants(parent: Element | XMLDocument): Node[] {
   return (Array.from(parent.childNodes) as Node[]).concat(
@@ -32,7 +36,7 @@ export function descendants(parent: Element | XMLDocument): Node[] {
 
 export const sclDocString = `<?xml version="1.0" encoding="UTF-8"?>
     <SCL version="2007" revision="B" xmlns="http://www.iec.ch/61850/2003/SCL" xmlns:ens1="http://example.org/somePreexistingExtensionNamespace">
-    <Substation name="A1" desc="test substation"></Substation>
+    <Substation name="A1" desc="test substation" ens1:test="test"></Substation>
   </SCL>`;
 const testDocStrings = [
   sclDocString,
@@ -97,13 +101,24 @@ export function setAttributes(nodes: Node[]): Arbitrary<SetAttributes> {
     constantFrom(...nodes.filter((nd) => nd.nodeType === Node.ELEMENT_NODE))
   );
   const attributes = dictionary(
-    stringArbitrary(),
+    stringMatching(xmlAttributeName),
     oneof(stringArbitrary(), constant(null)),
   );
+  const namespaces = array(tuple(webUrl(), stringMatching(xmlNamespacePrefix)));
+  const prefixedAttributes = namespaces.chain((urlPrefixTuples) => {
+    const shape: Record<string, Arbitrary<unknown>> = {};
+    urlPrefixTuples.forEach(([url, prefix]) => {
+      shape[url] = dictionary(
+        stringMatching(xmlPrefixedAttributeName(prefix)),
+        oneof(stringArbitrary(), constant(null)),
+      );
+    });
+    return record(shape);
+  });
   // object() instead of nested dictionary() necessary for performance reasons
   const attributesNS = objectArbitrary({
     key: webUrl(),
-    values: [attributes],
+    values: [prefixedAttributes],
     maxDepth: 0,
   }) as Arbitrary<Record<string, Record<string, string | null>>>;
   return record({ element, attributes, attributesNS });
