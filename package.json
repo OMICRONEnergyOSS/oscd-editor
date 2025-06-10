@@ -1,18 +1,18 @@
 {
-  "name": "@openenergytools/xml-lib",
+  "name": "@omicronenergy/oscd-editor",
   "description": "Function library for basic XML manipulations",
   "license": "Apache-2.0",
   "author": "Jakob Vogelsang",
   "version": "1.0.0",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/oscd-editor.js",
+  "types": "./dist/oscd-editor.d.ts",
   "files": [
     "/dist/"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/OpenEnergyTools/xml-lib.git"
+    "url": "https://github.com/omicronenergy/oscd-editor.git"
   },
   "publishConfig": {
     "access": "public"

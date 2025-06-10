@@ -15,7 +15,7 @@ history. This class is a wrapper around the `handleEdit` function and provides
 a more user-friendly API. The `EditV2Editor` class can be used as follows:
 
 ```ts
-import { EditV2Editor } from '@openenergytools/xml-lib';
+import { EditV2Editor } from '@omicronenergy/oscd-editor';
 
 const editor = new EditV2Editor();
 
