@@ -7,5 +7,5 @@ coverage
 .tsbuildinfo
 
 ## editors
-/.idea
-/.vscode
+.idea
+.vscode

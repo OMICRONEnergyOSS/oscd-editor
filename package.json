@@ -3,7 +3,7 @@
   "description": "Function library for basic XML manipulations",
   "license": "Apache-2.0",
   "author": "OMICRON electronics GmbH",
-  "version": "0.0.1",
+  "version": "1.4.0",
   "type": "module",
   "main": "./dist/oscd-editor.js",
   "types": "./dist/oscd-editor.d.ts",
@@ -24,6 +24,7 @@
     "test": "npm run build && wtr --coverage",
     "test:watch": "npm run build && concurrently -k -r \"tsc -b --watch --preserveWatchOutput\" \"wtr --watch --coverage\"",
     "build": "npx rimraf dist && tsc",
+    "doc": "npx rimraf doc && typedoc --out doc oscd-editor.ts",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -45,7 +46,8 @@
     "prettier": "^3.5.3",
     "rimraf": "^3.0.2",
     "semantic-release": "24.1.2",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "typedoc": "^0.28.5"
   },
   "dependencies": {
     "@omicronenergy/oscd-api": "^0.0.11"

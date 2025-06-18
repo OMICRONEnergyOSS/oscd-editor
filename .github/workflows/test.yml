@@ -1,5 +1,8 @@
-name: Test branch
-on: push
+name: Test
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -8,16 +11,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
+      - uses: ./.github/actions/setup-node-env
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install optional dependencies
-        run: npm install @rollup/rollup-linux-x64-gnu
-
-      - name: Run tests
+      - name: Build
+        run: npm run-script build
+      - name: Run unit tests
         run: npm run-script test
