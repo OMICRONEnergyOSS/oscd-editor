@@ -3,7 +3,7 @@
   "description": "Function library for basic XML manipulations",
   "license": "Apache-2.0",
   "author": "OMICRON electronics GmbH",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "type": "module",
   "main": "./dist/oscd-editor.js",
   "types": "./dist/oscd-editor.d.ts",
