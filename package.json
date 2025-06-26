@@ -12,7 +12,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/omicronenergyoss/oscd-editor.git"
+    "url": "https://github.com/OMICRONEnergyOSS/oscd-editor.git"
   },
   "publishConfig": {
     "access": "public"
