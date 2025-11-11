@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.0](https://github.com/OMICRONEnergyOSS/oscd-editor/compare/oscd-editor-v1.5.0...oscd-editor-v1.6.0) (2025-11-11)
+
+
+### Features
+
+* extend subscriber handling to publish on all changes (including undo & redo) ([9173b94](https://github.com/OMICRONEnergyOSS/oscd-editor/commit/9173b94ad35133d938548f201b8764c96daeb5a0))
+
+
+### Bug Fixes
+
+* correct package.json repo url so provenance checks pass ([f4fd61d](https://github.com/OMICRONEnergyOSS/oscd-editor/commit/f4fd61d339905ab255b74974157645b8f688af47))
+* unsubscribe should remove the correct subscriber every time ([9899f8e](https://github.com/OMICRONEnergyOSS/oscd-editor/commit/9899f8e982b9fef236862b2bfcf75e635b775f89)), closes [#11](https://github.com/OMICRONEnergyOSS/oscd-editor/issues/11)
+
 ## [1.5.0](https://github.com/OMICRONEnergyOSS/oscd-editor/compare/oscd-editor-v1.4.0...oscd-editor-v1.5.0) (2025-06-24)
 
 
