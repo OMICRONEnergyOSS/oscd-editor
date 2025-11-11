@@ -8,8 +8,8 @@ export {
   SetTextContent,
   TransactedCallback,
   Transactor,
-} from "@omicronenergy/oscd-api";
+} from '@openscd/oscd-api';
 
-export { handleEdit } from "./handleEdit.js";
+export { handleEdit } from './handleEdit.js';
 
-export { XMLEditor } from "./XMLEditor.js";
+export { XMLEditor } from './XMLEditor.js';

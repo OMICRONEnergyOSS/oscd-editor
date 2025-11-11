@@ -7,19 +7,19 @@ import {
   testDocs,
   UndoRedoTestCase,
   undoRedoTestCases,
-} from '@omicronenergy/oscd-test-utils/arbitraries.js';
+} from '@omicronenergy/oscd-test-utils';
 
-import { sclDocString } from '@omicronenergy/oscd-test-utils/scl-sample-docs.js';
+import { Commit, EditV2, Transactor } from '@openscd/oscd-api';
 
-import { Commit, EditV2, Transactor } from '@omicronenergy/oscd-api';
-
-import {
-  isSetTextContent,
-  isSetAttributes,
-} from '@omicronenergy/oscd-api/utils.js';
+import { isSetTextContent, isSetAttributes } from '@openscd/oscd-api/utils.js';
 
 import { XMLEditor } from './XMLEditor.js';
 import sinon from 'sinon';
+
+export const sclDocString = `<?xml version="1.0" encoding="UTF-8"?>
+    <SCL version="2007" revision="B" xmlns="http://www.iec.ch/61850/2003/SCL" xmlns:ens1="http://example.org/somePreexistingExtensionNamespace">
+    <Substation name="A1" desc="test substation"></Substation>
+  </SCL>`;
 
 describe('XMLEditor', () => {
   let editor: Transactor<EditV2>;

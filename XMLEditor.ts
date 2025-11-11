@@ -5,7 +5,7 @@ import {
   EditV2,
   TransactedCallback,
   Transactor,
-} from '@omicronenergy/oscd-api';
+} from '@openscd/oscd-api';
 
 const EMPTY_COMMIT: Commit<EditV2> = { undo: [], redo: [] };
 

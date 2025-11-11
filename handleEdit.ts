@@ -4,7 +4,7 @@ import {
   Remove,
   SetAttributes,
   SetTextContent,
-} from "@omicronenergy/oscd-api";
+} from '@openscd/oscd-api';
 
 import {
   isComplexEditV2,
@@ -12,7 +12,7 @@ import {
   isRemove,
   isSetAttributes,
   isSetTextContent,
-} from "@omicronenergy/oscd-api/utils.js";
+} from '@openscd/oscd-api/utils.js';
 
 function handleSetTextContent({
   element,
@@ -20,7 +20,7 @@ function handleSetTextContent({
 }: SetTextContent): (SetTextContent | Insert)[] {
   const { childNodes } = element;
 
-  const restoreChildNodes: Insert[] = Array.from(childNodes).map((node) => ({
+  const restoreChildNodes: Insert[] = Array.from(childNodes).map(node => ({
     parent: element,
     node,
     reference: null,
@@ -28,7 +28,7 @@ function handleSetTextContent({
 
   element.textContent = textContent;
 
-  const undoTextContent: SetTextContent = { element, textContent: "" };
+  const undoTextContent: SetTextContent = { element, textContent: '' };
 
   return [undoTextContent, ...restoreChildNodes];
 }
@@ -45,7 +45,7 @@ function handleSetAttributes({
   if (attributes)
     Object.keys(attributes)
       .reverse()
-      .forEach((name) => {
+      .forEach(name => {
         oldAttributes[name] = element.getAttribute(name);
       });
 
@@ -67,10 +67,10 @@ function handleSetAttributes({
     Object.entries(attributesNS).forEach(([ns, attrs]) => {
       Object.keys(attrs!)
         .reverse()
-        .forEach((name) => {
+        .forEach(name => {
           oldAttributesNS[ns] = {
             ...oldAttributesNS[ns],
-            [name]: element.getAttributeNS(ns, name.split(":").pop()!),
+            [name]: element.getAttributeNS(ns, name.split(':').pop()!),
           };
         });
     });
@@ -86,7 +86,7 @@ function handleSetAttributes({
         try {
           const [name, value] = entry as [string, string | null];
           if (value === null) {
-            element.removeAttributeNS(ns, name.split(":").pop()!);
+            element.removeAttributeNS(ns, name.split(':').pop()!);
           } else {
             element.setAttributeNS(ns, name, value);
           }
@@ -147,7 +147,7 @@ export function handleEdit(edit: EditV2): EditV2 {
   if (isSetTextContent(edit)) return handleSetTextContent(edit);
   if (isComplexEditV2(edit))
     return edit
-      .map((edit) => handleEdit(edit))
+      .map(edit => handleEdit(edit))
       .reverse()
       .flat(Infinity as 1);
 
