@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/OMICRONEnergyOSS/oscd-editor/compare/oscd-editor-v1.6.0...oscd-editor-v1.7.0) (2025-11-12)
+
+
+### Features
+
+* switched to @openscd/oscd-api + updated oscd-test-utils ([284888d](https://github.com/OMICRONEnergyOSS/oscd-editor/commit/284888d9ae35392018a9b553d73e35552219dc0b))
+
 ## [1.6.0](https://github.com/OMICRONEnergyOSS/oscd-editor/compare/oscd-editor-v1.5.0...oscd-editor-v1.6.0) (2025-11-11)
 
 
