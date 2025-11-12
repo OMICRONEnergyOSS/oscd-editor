@@ -7,7 +7,7 @@ import {
   Transactor,
 } from '@openscd/oscd-api';
 
-const EMPTY_COMMIT: Commit<EditV2> = { undo: [], redo: [] };
+const EMPTY_COMMIT: Commit<EditV2> = { undo: [], redo: [], time: Date.now() };
 
 export class XMLEditor implements Transactor<EditV2> {
   past: Commit<EditV2>[] = [];
@@ -20,7 +20,7 @@ export class XMLEditor implements Transactor<EditV2> {
     const commit: Commit<EditV2> =
       squash && this.past.length
         ? this.past[this.past.length - 1]
-        : { undo: [], redo: [] };
+        : { undo: [], redo: [], time: Date.now() };
     const undo = handleEdit(change);
     // typed as per https://github.com/microsoft/TypeScript/issues/49280#issuecomment-1144181818 recommendation:
     commit.undo.unshift(...[undo].flat(Infinity as 1));
