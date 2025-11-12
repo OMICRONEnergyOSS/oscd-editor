@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/OMICRONEnergyOSS/oscd-editor/compare/oscd-editor-v1.7.0...oscd-editor-v1.7.1) (2025-11-12)
+
+
+### Bug Fixes
+
+* correct typedoc src path ([5a242e3](https://github.com/OMICRONEnergyOSS/oscd-editor/commit/5a242e3093abb3e82ff1f0f2996f58a5a30d99e5))
+
 ## [1.7.0](https://github.com/OMICRONEnergyOSS/oscd-editor/compare/oscd-editor-v1.6.0...oscd-editor-v1.7.0) (2025-11-12)
 
 
