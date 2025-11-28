@@ -1,5 +1,5 @@
 {
-  "name": "@omicronenergy/oscd-editor",
+  "name": "@openscd/oscd-editor",
   "description": "Function library for basic XML manipulations",
   "license": "Apache-2.0",
   "author": "OMICRON electronics GmbH",
@@ -12,7 +12,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/OMICRONEnergyOSS/oscd-editor.git"
+    "url": "https://github.com/openscd/oscd-editor.git"
   },
   "publishConfig": {
     "access": "public"

@@ -1,13 +1,12 @@
-This repository hold the XML editing engine inspired by the [OpenSCD core](https://github.com/openscd/open-scd-core) and is following the newest agreed [OpenSCD Core API](https://github.com/OpenEnergyTools/open-scd-core/blob/main/API.md)
-
+This repository hold the XML editing engine, following the newest agreed [OpenSCD Plugin API](https://github.com/openscd/oscd-api/blob/main/docs/plugin-api.md)
 
 ## Usage
 
 You can either load and use the `handleEdit` function through npm or other content delivery networks. This function does manipulate a XMLDocument as per user intent through the edit as its input:
 
 ```ts
-const removeNode: Remove = {node: toBeRemovedNode}
-handleEdit(removeNode)
+const removeNode: Remove = { node: toBeRemovedNode };
+handleEdit(removeNode);
 ```
 
 You can also use the exported `EditV2Editor` class which keeps track of an undo/redo
@@ -15,11 +14,11 @@ history. This class is a wrapper around the `handleEdit` function and provides
 a more user-friendly API. The `EditV2Editor` class can be used as follows:
 
 ```ts
-import { EditV2Editor } from '@omicronenergy/oscd-editor';
+import { EditV2Editor } from '@openscd/oscd-editor';
 
 const editor = new EditV2Editor();
 
-const removeNode: Remove = {node: toBeRemovedNode}
+const removeNode: Remove = { node: toBeRemovedNode };
 editor.handleEdit(removeNode);
 
 expect(toBeRemovedNode.parentNode).to.not.exist;
@@ -37,11 +36,11 @@ expect(toBeRemovedNode.parentNode).to.not.exist;
 
 To scan the project for linting and formatting errors, run
 
->npm run lint
+> npm run lint
 
 To automatically fix linting and formatting errors, run
 
->npm run format
+> npm run format
 
 We use ESLint and Prettier for linting and formatting. Plugins for automatic formatting and linting during editing are available for vim, emacs, VSCode, and all popular IDEs.
 
@@ -49,12 +48,11 @@ We use ESLint and Prettier for linting and formatting. Plugins for automatic for
 
 To execute a single test run:
 
->npm test
+> npm test
 
 To run the tests in interactive watch mode run:
 
->npm run test:watch
-
+> npm run test:watch
 
 # License
 
