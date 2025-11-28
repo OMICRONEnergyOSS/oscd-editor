@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/openscd/oscd-editor/compare/oscd-editor-v1.7.1...oscd-editor-v1.8.0) (2025-11-28)
+
+
+### Features
+
+* updating module naming to openscd ([7f55460](https://github.com/openscd/oscd-editor/commit/7f554601ecbf631ae9736ca606abea958010c838))
+
 ## [1.7.1](https://github.com/OMICRONEnergyOSS/oscd-editor/compare/oscd-editor-v1.7.0...oscd-editor-v1.7.1) (2025-11-12)
 
 
